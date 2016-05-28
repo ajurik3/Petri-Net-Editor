@@ -44,15 +44,6 @@ public class Arc extends Polyline{
 		weightLabel.setText("" + weight);
 		int numPoints = this.getPoints().size();
 		
-		/*System.out.println(startNode.getName() + " to " + endNode.getName());
-		
-		for(double point : this.getPoints()){
-			System.out.print(point + " ");
-		}
-		
-		System.out.println("");*/
-		
-		
 		Point2D intersection = new Point2D(this.getPoints().get(numPoints-4),      //arrow head x
 										   this.getPoints().get(numPoints-3));     //arrow head y
 		
