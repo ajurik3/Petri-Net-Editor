@@ -10,6 +10,8 @@ import javafx.scene.shape.Circle;
 public class Place extends PNode {
 	
 	private int numTokens;
+	
+	//graphical representations of tokens, initialized by TokenManager
 	private ArrayList<Token> tokens = new ArrayList<Token>();
 	
 	public Place(double x, double y){
@@ -67,14 +69,6 @@ public class Place extends PNode {
 	
 	public void addTokens(Token tokenGraphic){
 			tokens.add(tokenGraphic);
-	}
-	
-	public void clearTokens(){
-		if(tokens!=null){
-			for(Token token: tokens){
-				tokens.remove(token);
-			}
-		}
 	}
 	
 	@Override

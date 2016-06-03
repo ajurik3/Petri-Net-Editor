@@ -17,7 +17,6 @@ import javafx.scene.shape.Polyline;
 import javafx.stage.Stage;
 import petrineteditor.Place;
 import petrineteditor.Arc;
-import petrineteditor.PNode;
 import petrineteditor.Transition;
 import petrineteditor.Token;
 import petrineteditor.TokenManager;
@@ -154,6 +153,18 @@ public class PetriNet {
 		return saved!=null;
 	}
 	
+	/*
+	 * Saves Petri Net component's delimited by lines with each of the component's properties delimited by a space
+	 * Components appear in the following order: places, transitions, output arcs, input arcs
+	 * 
+	 * Format for each component is as follows:
+	 * 
+	 * Place X-Coordinate Y-Coordinate NumberOfTokens Name
+	 * Transition X-Coordinate Y-Coordinate Priority Name
+	 * Output StartNode EndNode Weight [PointX-Coordinate PointY-Coordinate]+ 
+	 * Input EndNode StartNode Weight [PointX-Coordinate PointY-Coordinate]+ 
+	 * 
+	 */
 	public void save() throws IOException{
 		
 		PrintWriter out = new PrintWriter(saved);

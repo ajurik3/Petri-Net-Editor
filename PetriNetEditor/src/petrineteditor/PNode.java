@@ -4,6 +4,7 @@ import javafx.scene.control.Button;
 import javafx.scene.shape.Shape;
 import javafx.scene.text.Text;
 
+//extended by Places and Transitions
 public abstract class PNode extends Button {
 
 	protected double xCenter, yCenter;

@@ -5,6 +5,7 @@ public class Segment extends Line{
 
 	private PNode startNode;
 	
+	//start point is contained by a node
 	public Segment(PNode start){
 		super(start.getX(), start.getY(), start.getX(), start.getY());
 		
@@ -19,6 +20,8 @@ public class Segment extends Line{
 		
 		startNode = start;
 	}
+	
+	//start point is not contained in a node
 	public Segment(PNode start, double x, double y){
 		super(x, y, x, y);
 		startNode = start;

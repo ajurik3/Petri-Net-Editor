@@ -40,6 +40,7 @@ public class Arc extends Polyline{
 		return weightLabel;
 	}
 	
+	//creates arc label displaying weight at an offset near midpoint of last segment in arc
 	public void initArcLabel(){
 		weightLabel.setText("" + weight);
 		int numPoints = this.getPoints().size();

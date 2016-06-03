@@ -4,7 +4,7 @@ import javafx.scene.shape.Shape;
 
 public class Token {
 	
-	private Shape tokenShape;
+	private Shape tokenShape; //circle or text
 	
 	Token(Shape shape){
 		tokenShape = shape;

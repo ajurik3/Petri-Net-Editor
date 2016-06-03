@@ -14,7 +14,7 @@ public class TokenManager {
 	
 	private Pane layout;
 	private PetriNet net;
-	private final int MAX_TOKENS = 99;	//additional draw method(s) necessary to increase
+	private final int MAX_TOKENS = 99;
 	
 	public TokenManager(Pane pane, PetriNet petrinet){
 		layout = pane;
@@ -131,16 +131,7 @@ public class TokenManager {
 		
 		//printTransitionStatus(transitions);
 	}
-	
-	private void printTransitionStatus(ArrayList<Transition> transitions){
-		for(Transition transition : transitions){
-			if(transition.isEnabled())
-				System.out.println(transition.getName() + ": Enabled");
-			else
-				System.out.println(transition.getName() + ": Disabled");
-		}
-	}
-	
+			
 	private void initialize(Place target){
 		//1, 4, and 5 token arrangement
 		target.getTokens().add(new Token(new Circle(target.getX() + 2.0, target.getY() + 18.0, 4.0, Color.BLACK)));
@@ -167,5 +158,15 @@ public class TokenManager {
 		Text doubleNumShape = new Text(target.getX()-1.0, target.getY()+17.0, ""+10);
 		doubleNumShape.setFont(new Font(20.0));
 		target.addTokens(new Token(doubleNumShape));
+	}
+	
+	//testing
+	private void printTransitionStatus(ArrayList<Transition> transitions){
+		for(Transition transition : transitions){
+			if(transition.isEnabled())
+				System.out.println(transition.getName() + ": Enabled");
+			else
+				System.out.println(transition.getName() + ": Disabled");
+		}
 	}
 }
