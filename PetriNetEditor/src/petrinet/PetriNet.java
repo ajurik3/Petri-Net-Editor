@@ -27,11 +27,15 @@ public class PetriNet {
 	private ArrayList<Place> places = new ArrayList<Place>();
 	private ArrayList<Transition> transitions = new ArrayList<Transition>();
 	private ArrayList<Arc> arcs = new ArrayList<Arc>();
+	
+	//change in marking for place P and transition T when transition T is fired
+	//P's index in outer ArrayList is equal to its index in places  
 	private ArrayList<ArrayList<Integer>> inputTokens = new ArrayList<ArrayList<Integer>>();
 	private ArrayList<ArrayList<Integer>> outputTokens = new ArrayList<ArrayList<Integer>>();
 	private ArrayList<ArrayList<Integer>> incidence = new ArrayList<ArrayList<Integer>>();
+	
 	private Pane layout;
-	private File saved;
+	private File saved;		//File Petri Net is saved to
 	
 	public PetriNet(Pane pane){
 		layout = pane;
@@ -97,17 +101,6 @@ public class PetriNet {
 		saved = source;
 		in.close();
 	}
-	
-	public void clear(){
-		places.clear();
-		transitions.clear();
-		arcs.clear();
-		inputTokens.clear();
-		outputTokens.clear();
-		incidence.clear();
-		layout.getChildren().clear();
-	}
-	
 	
 	public void saveAs(File dest)throws IOException{
 		try{
@@ -242,9 +235,9 @@ public class PetriNet {
 		}
 		
 		
-		ArrayList<Token> tokens = target.getTokens();
+		ArrayList<Token> removedTokens = target.getTokens();
 		
-		for(Token token: tokens){
+		for(Token token: removedTokens){
 			if(layout.getChildren().indexOf(token.getShape())!=-1)
 				layout.getChildren().remove(token.getShape());
 		}
@@ -261,7 +254,7 @@ public class PetriNet {
 	public void addTransition(Transition newTransition){
 		transitions.add(newTransition);
 		newTransition.setPriority(transitions.size());
-		newTransition.setName("T" + (transitions.size()-1));
+		newTransition.setName("T" + (transitions.size()-1));			
 		
 		for(int i = 0; i < places.size(); i++){
 			inputTokens.get(i).add(0);
@@ -276,17 +269,17 @@ public class PetriNet {
 	public void removeTransition(Transition target){
 		int index = transitions.indexOf(target);
 		
-		ArrayList<Integer> remove = new ArrayList<Integer>();
+		ArrayList<Integer> removedArcs = new ArrayList<Integer>();
 
 		
 		for(int i = 0; i < arcs.size(); i++){
 			if(arcs.get(i).getStartNode()==target||arcs.get(i).getEndNode()==target){
-				remove.add(0, i);
+				removedArcs.add(0, i);
 			}
 		}
 		
-		for(int i = 0; i < remove.size(); i++){
-			removeArc(arcs.get((remove.get(i))));
+		for(int i = 0; i < removedArcs.size(); i++){
+			removeArc(arcs.get((removedArcs.get(i))));
 		}
 		
 		for(int i = 0; i < places.size(); i++){
@@ -372,11 +365,13 @@ public class PetriNet {
 		int col = 0;
 		
 		if(places.indexOf(target.getStartNode())!=-1){
+			//update (P, T) arc
 			row = places.indexOf(target.getStartNode());
 			col = transitions.indexOf(target.getEndNode());
 			outputTokens.get(row).set(col, 0);
 		}
 		else{
+			//update (T, P) arc
 			row = places.indexOf(target.getEndNode());
 			col = transitions.indexOf(target.getStartNode());
 			inputTokens.get(row).set(col, 0);
@@ -394,11 +389,13 @@ public class PetriNet {
 		int col = 0;
 		
 		if(places.indexOf(target.getStartNode())!=-1){
+			//update (P, T) arc
 			row = places.indexOf(target.getStartNode());
 			col = transitions.indexOf(target.getEndNode());
 			outputTokens.get(row).set(col, weight);
 		}
 		else{
+			//update (T, P) arc
 			row = places.indexOf(target.getEndNode());
 			col = transitions.indexOf(target.getStartNode());
 			inputTokens.get(row).set(col, weight);
@@ -407,6 +404,7 @@ public class PetriNet {
 		incidence.get(row).set(col, inputTokens.get(row).get(col)-outputTokens.get(row).get(col));
 		target.setWeight(weight);
 		
+		//remove weight label if 0 or 1
 		if(layout.getChildren().indexOf(target.getWeightLabel())!=-1){
 			if(target.getWeight()<2)
 				layout.getChildren().remove(target.getWeightLabel());
@@ -441,7 +439,18 @@ public class PetriNet {
 		return incidence;
 	}
 	
-private void printMatrices(){
+	public void clear(){
+		places.clear();
+		transitions.clear();
+		arcs.clear();
+		inputTokens.clear();
+		outputTokens.clear();
+		incidence.clear();
+		layout.getChildren().clear();
+	}
+	
+	//testing
+	private void printMatrices(){
 		
 		System.out.println("Input: ");
 		
