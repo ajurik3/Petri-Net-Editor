@@ -56,10 +56,12 @@ public class TokenManager {
 		updateTransitions();
 	}
 	
-	public void setTokens(Place target, int num, boolean check){
+	//removes all tokens of target from pane and adds those which represent the new marking
+	public void setTokens(Place target, int num, boolean singleChange){
 		if(num>=0&&num<=MAX_TOKENS){
 			
 			if(target.getTokens().size()==0){
+				//place does not have Token markings container initialized
 				initialize(target);
 			}
 			
@@ -108,7 +110,8 @@ public class TokenManager {
 			target.setNumTokens(num);
 		}
 		
-		if(check)
+		//only update transitions via this function if called for an individual marking change
+		if(singleChange)
 			updateTransitions();
 	}
 	
@@ -122,6 +125,7 @@ public class TokenManager {
 			transition.setEnabled(true);
 		}
 		
+		//set status to not enabled for all transitions whose input places have insufficient tokens
 		for(int i = 0; i < places.size(); i++){
 			for(int j = 0; j < transitions.size(); j++){
 				if(places.get(i).getNumTokens()<outputTokens.get(i).get(j))
@@ -131,8 +135,10 @@ public class TokenManager {
 		
 		//printTransitionStatus(transitions);
 	}
-			
+	
+	//adds all Tokens to parameter target which may be needed to represent its number of tokens
 	private void initialize(Place target){
+		
 		//1, 4, and 5 token arrangement
 		target.getTokens().add(new Token(new Circle(target.getX() + 2.0, target.getY() + 18.0, 4.0, Color.BLACK)));
 		target.getTokens().add(new Token(new Circle(target.getX() + 18.0, target.getY() + 18.0, 4.0, Color.BLACK)));

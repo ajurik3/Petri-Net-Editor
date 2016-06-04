@@ -230,6 +230,7 @@ public class PetriNet {
 		//printMatrices();
 	}
 	
+	//removes place, all arcs connected to it, and all tokens displayed for the place
 	public void removePlace(Place target){
 		
 		ArrayList<Integer> remove = new ArrayList<Integer>();
@@ -277,6 +278,7 @@ public class PetriNet {
 		//printMatrices();
 	}
 	
+	//removes transition and all arcs connected to it
 	public void removeTransition(Transition target){
 		int index = transitions.indexOf(target);
 		

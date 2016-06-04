@@ -28,9 +28,9 @@ public class Simulation {
 	
 	private PetriNet net;
 	private Pane layout;
-	private boolean prioritySimulation = false;
+	private boolean prioritySimulation = false;		//simulation uses transition priorities if true
 	
-	private int numFirings;
+	private int numFirings;							//number of firings in simulation
 	
 	public Simulation(PetriNet petrinet, Pane pane){
 		net = petrinet;
@@ -87,11 +87,15 @@ public class Simulation {
 		ok.setOnAction(n ->{
 			
 			try{
-				numFirings = Integer.parseInt(((TextField)((HBox)pane.getTop()).getChildren().get(1)).getText());
+				TextField firingsInput = ((TextField)((HBox)pane.getTop()).getChildren().get(1));
+			
+				numFirings = Integer.parseInt(firingsInput.getText());
 					
 					if(numFirings<1){
 						numFirings = 1;
 					}
+					
+					//start random simulation or priority simulation
 					if(!prioritySimulation)
 						this.start();
 					else
@@ -99,6 +103,8 @@ public class Simulation {
 					
 			}
 			catch(NumberFormatException x){
+				
+				//show error, invalid firings input
 				Stage firingError = new Stage();
 				firingError.initOwner(simMenu);
 				firingError.setTitle("Invalid Number of Firings");
@@ -129,6 +135,8 @@ public class Simulation {
 		simMenu.show();
 	}
 	
+	//returns a window where user can set priority of each transition for the simulation
+	//with a TextField
 	private Stage getPriorityStage(ArrayList<Transition> transitions, Stage ownerStage){
 		
 		Stage prioritySettings = new Stage();
@@ -145,14 +153,19 @@ public class Simulation {
 		transitionSettings.setVgap(10.0);
 		
 		transitionSettings.addRow(0, new Text("Name"), new Text("Transition Priority"));
-				
+		
+		
+		//display rows with transition name a TextField for each transition
 		for(int i = 0; i < transitions.size(); i++)
 			transitionSettings.addRow(i+1, new Text(transitions.get(i).getName()),
 								  new TextField("" + transitions.get(i).getPriority()));
 		
+		//center all nodes and set TextField sizes
 		for(Node node : transitionSettings.getChildren()){
 			GridPane.setHalignment(node, HPos.CENTER);
+			
 			if((GridPane.getColumnIndex(node)!=0)&&(GridPane.getRowIndex(node)!=0))
+				//contains TextField
 				((TextField)node).setPrefColumnCount(5);
 		}
 		
@@ -162,11 +175,17 @@ public class Simulation {
 		okButton.setOnAction(e ->{
 			for(Node node : transitionSettings.getChildren()){
 				if((GridPane.getColumnIndex(node)!=0)&&(GridPane.getRowIndex(node)!=0)){
+					
+					//index of transition
 					int transNum = GridPane.getRowIndex(node) - 1;
 					try{
+						
+						//set priority of current transition
 						if((Integer.parseInt(((TextField)node).getText())) > 0)
 							transitions.get(transNum).setPriority(Integer.parseInt(((TextField)node).getText()));
 						else{
+							//display error, invalid priority input entered
+							
 							prioritySimulation = false;
 							
 							Stage priorityError = new Stage();
@@ -192,7 +211,9 @@ public class Simulation {
 							priorityError.show();
 						}
 					}
-					catch(NumberFormatException x){
+					catch(NumberFormatException x)
+					{
+						//display error, invalid priority input entered
 						
 						prioritySimulation = false;
 						
@@ -222,9 +243,10 @@ public class Simulation {
 			}
 			
 			if(prioritySimulation)
+				//simulation not postponed due to invalid input
 				prioritySettings.close();
 			else{
-				//correct invalid input
+				//invalid input, restore previous settings to TextField text
 				for(Node node : transitionSettings.getChildren()){
 					GridPane.setHalignment(node, HPos.CENTER);
 					if((GridPane.getColumnIndex(node)!=0)&&(GridPane.getRowIndex(node)!=0)){
@@ -260,6 +282,7 @@ public class Simulation {
 		double averageTokens[] = new double[numPlaces];
 		int marking[] = new int[numPlaces];
 		
+		//initialize arrays with initial marking of places
 		for(int i = 0; i < numPlaces; i++){
 			marking[i] = places.get(i).getNumTokens();
 			averageTokens[i] = marking[i];
@@ -267,7 +290,7 @@ public class Simulation {
 		}
 		
 		ArrayList<Transition> transitions = net.getTransitions();
-		ArrayList<Integer> enabled = new ArrayList<Integer>();
+		ArrayList<Integer> enabled = new ArrayList<Integer>();		//indices of enabled transitions
 		
 		updateTransitions(enabled, marking, places, transitions);
 		int numEnabled = enabled.size();
@@ -279,33 +302,34 @@ public class Simulation {
 			int fireNum = 0;
 			
 			while((numEnabled>0)&&(fireNum<numFirings)){
+				//enabled transition exists and specified number of firings not completed
 				
+				//index of randomly chosen enabled transition
 				int col = Math.abs(selector.nextInt())%numEnabled;
 				
+				
 				for(int i = 0; i < marking.length; i++){
-					marking[i] += incidence.get(i).get(enabled.get(col));
-					averageTokens[i] += marking[i];
+					marking[i] += incidence.get(i).get(enabled.get(col));	//update marking
+					averageTokens[i] += marking[i];							//add marking to average
 					
 					if(marking[i] > maxTokens[i])
-						maxTokens[i] = marking[i];
+						maxTokens[i] = marking[i];							//update any new maximums
 				}
-
-				updateTransitions(enabled, marking, places, transitions);
-				numEnabled = enabled.size();
-				fireNum++;
-			}
 			
-			for(int i = 0; i < numPlaces; i++){
+				//round results
+				for(int i = 0; i < numPlaces; i++){
 				averageTokens[i] /= (fireNum+1);
 				
 				averageTokens[i] *= 10000;
 				averageTokens[i] = (int)averageTokens[i];
 				averageTokens[i] /= 10000;
-			}
+				}
 			
 			displayResults(fireNum, places, averageTokens, maxTokens);
+			}
 		}
 		else{
+			//no transition enabled
 			displayResults(0, places, averageTokens, maxTokens);
 		}
 	}
@@ -318,6 +342,7 @@ public class Simulation {
 		double averageTokens[] = new double[numPlaces];
 		int marking[] = new int[numPlaces];
 		
+		//initialize arrays with initial marking of places
 		for(int i = 0; i < numPlaces; i++){
 			marking[i] = places.get(i).getNumTokens();
 			averageTokens[i] = marking[i];
@@ -325,8 +350,9 @@ public class Simulation {
 		}
 		
 		ArrayList<Transition> transitions = net.getTransitions();
-		ArrayList<Integer> enabled = new ArrayList<Integer>();
+		ArrayList<Integer> enabled = new ArrayList<Integer>();		//indices of enabled transitions
 		
+		//initialize enabled transitions
 		updateTransitionsPriority(enabled, marking, places, transitions);
 		int numEnabled = enabled.size();
 				
@@ -337,15 +363,18 @@ public class Simulation {
 			int fireNum = 0;
 			
 			while((numEnabled>0)&&(fireNum<numFirings)){
+				//enabled transition exists and specified number of firings not completed
 				
+				//index of randomly chosen enabled transition
 				int col = Math.abs(selector.nextInt())%numEnabled;
 				
+				
 				for(int i = 0; i < marking.length; i++){
-					marking[i] += incidence.get(i).get(enabled.get(col));
-					averageTokens[i] += marking[i];
+					marking[i] += incidence.get(i).get(enabled.get(col));	//update marking
+					averageTokens[i] += marking[i];							//add marking to average
 					
 					if(marking[i] > maxTokens[i])
-						maxTokens[i] = marking[i];
+						maxTokens[i] = marking[i];							//update any new maximums
 				}
 
 				updateTransitionsPriority(enabled, marking, places, transitions);
@@ -353,6 +382,7 @@ public class Simulation {
 				fireNum++;
 			}
 			
+			//round results
 			for(int i = 0; i < numPlaces; i++){
 				averageTokens[i] /= (fireNum+1);
 				
@@ -364,9 +394,11 @@ public class Simulation {
 			displayResults(fireNum, places, averageTokens, maxTokens);
 		}
 		else{
+			//no transitions enabled
 			displayResults(0, places, averageTokens, maxTokens);
 		}
 	}
+	
 	
 	private void displayResults(int fireNum, ArrayList<Place> places, double[] averageTokens, int[] maxTokens){
 		Stage results = new Stage();
@@ -419,8 +451,10 @@ public class Simulation {
 		results.show();
 	}
 	
+	//modifies enabled to contain the indices of all enabled transitions with the marking specified by
+	//the marking parameter during a random simulation
 	private void updateTransitions(ArrayList<Integer> enabled, int[] marking,
-			ArrayList<Place> places, ArrayList<Transition> transitions){
+								   ArrayList<Place> places, ArrayList<Transition> transitions){
 		
 		ArrayList<ArrayList<Integer>> outputTokens = net.getOutputTokens();
 		
@@ -438,8 +472,10 @@ public class Simulation {
 		}
 	}
 	
+	//modifies enabled to contain the indices of all enabled transitions with the marking specified by
+	//the marking parameter during a priority simulation
 	private void updateTransitionsPriority(ArrayList<Integer> enabled, int[] marking,
-			ArrayList<Place> places, ArrayList<Transition> transitions){
+										   ArrayList<Place> places, ArrayList<Transition> transitions){
 		
 		ArrayList<ArrayList<Integer>> outputTokens = net.getOutputTokens();
 		
@@ -465,22 +501,13 @@ public class Simulation {
 		}
 		
 		//remove all enabled transitions with less than maximum priority
-		
-		
 		for(int i = enabled.size()-1; i >= 0; i--){
 			if(transitions.get(enabled.get(i)).getPriority() > maxPriority)
 				enabled.remove(new Integer(enabled.get(i)));
 		}
-		
-		/*System.out.println("BEGIN\n");
-		
-		for(int i = 0; i < enabled.size(); i++){
-			System.out.println("Index: " + i + ", Transition Num: " + enabled.get(i) + ", Transition Name: " + transitions.get(enabled.get(i)).getName()+ ", Transition Priority: " + transitions.get(enabled.get(i)).getPriority());
-		}
-		
-		System.out.println("");*/
 	}
 	
+	//fires transition by changing token marking and updating pane
 	public void fireTransition(Transition fired){
 		if(fired.isEnabled()){
 			

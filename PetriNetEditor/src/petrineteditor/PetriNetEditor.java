@@ -40,14 +40,17 @@ import javafx.scene.shape.Shape;
 
 public class PetriNetEditor extends Application{
 	
-	ToggleGroup selectMode = new ToggleGroup();
-	private Segment currentSegment = null;
-	private Polyline potentialArc;
 	private Pane layout = new Pane();
-	PetriNet net = new PetriNet(layout);
-	private TokenManager tokens = new TokenManager(layout, net);
+	
 	Simulation sim;
+	PetriNet net = new PetriNet(layout);
+	ToggleGroup selectMode = new ToggleGroup();		//current mode of editor
+	
+	private Segment currentSegment = null;
+	private Polyline potentialArc;					//previously processed Segments
 	private Stage stage;
+	private TokenManager tokens = new TokenManager(layout, net);
+	
 
 	public static void main(String[] args) {
 		Application.launch(args);
@@ -57,53 +60,37 @@ public class PetriNetEditor extends Application{
 	public void start(Stage primaryStage) throws Exception {
 		
 		stage = primaryStage;
-		BorderPane border = new BorderPane();
-		MenuBar mainMenu = getMenuBar(primaryStage);
-		HBox toolBar = new HBox(10);
-		VBox options = new VBox(10);
-		options.getChildren().addAll(mainMenu, toolBar);
-		toolBar.setAlignment(Pos.CENTER);
-
-		toolBar.getChildren().addAll(//new ToggleButton("Select"), 
-				new ToggleButton("Place"), new ToggleButton("Transition"), 
-				new ToggleButton("Arc"), new ToggleButton("Add Token"), 
-				new ToggleButton("Remove Token"), 
-				new ToggleButton("Fire Transition"), new ToggleButton("Simulate"));
-		
-		toolBar.getChildren().get(5).setOnMouseClicked( e ->{
-			sim = new Simulation(net, layout);
-		});
-		
-		toolBar.getChildren().get(6).setOnMouseClicked( e ->{
-			sim = new Simulation(net, layout);
-			sim.displayMenu(primaryStage);
-		});
-		
-		for(Node t: toolBar.getChildren()){
-			((ToggleButton)t).setToggleGroup(selectMode);
-			((ToggleButton)t).setOnAction(e ->clearOldMode());
-		}
-		
-		selectMode.getToggles().get(0).setSelected(true);
-
 		primaryStage.setMaximized(true);
 		primaryStage.setTitle("Petri Net Editor");
+		
+		VBox options = new VBox(10);
+		MenuBar mainMenu = getMenuBar(primaryStage);
+		HBox toolBar = getToolBar(primaryStage);
+		options.getChildren().addAll(mainMenu, toolBar);
+		
+		BorderPane border = new BorderPane();
+		border.setTop(options);
+		border.setCenter(layout);
+		BorderPane.setMargin(toolBar, new Insets(20, 0, 20, 0));
 		
 		layout.setOnMouseClicked( e ->{
 			if(e.getButton()==MouseButton.PRIMARY){
 				if(selected()&&((ToggleButton)selectMode.getSelectedToggle()).getText()=="Place"){
+					//create new place
 					Place newPlace = new Place(e.getX(), e.getY());		
 					newPlace.setContextMenu(getPlaceMenu(newPlace, primaryStage, tokens));
 					newPlace.setOnMouseClicked(v -> {handlePlaceClick(v);});
 					net.addPlace(newPlace);
 				}
 				else if(selected()&&((ToggleButton)selectMode.getSelectedToggle()).getText()=="Transition"){
+					//create new transition
 					Transition newTransition = new Transition(e.getX(), e.getY());
 					newTransition.setContextMenu(getTransitionMenu(newTransition, primaryStage));			
 					newTransition.setOnMouseClicked(v -> {handleTransitionClick(v);});
 					net.addTransition(newTransition);
 				}
 				else if(selected()&&((ToggleButton)selectMode.getSelectedToggle()).getText()=="Arc"){
+					//add segment to potentialArc and create new user controlled segment
 					if(currentSegment!=null){
 						addSegment(e.getX(), e.getY());
 					}
@@ -122,13 +109,42 @@ public class PetriNetEditor extends Application{
 			}
 		});
 
-		border.setTop(options);
-		border.setCenter(layout);
-		BorderPane.setMargin(toolBar, new Insets(20, 0, 20, 0));
 		primaryStage.setScene(new Scene(border));
 		primaryStage.show();
 	}
 	
+	//returns HBox containing ToggleButton for editor's modes
+	private HBox getToolBar(Stage primaryStage){
+		HBox toolBar = new HBox(10);
+		toolBar.setAlignment(Pos.CENTER);
+
+		toolBar.getChildren().addAll(//new ToggleButton("Select"), 
+				new ToggleButton("Place"), new ToggleButton("Transition"), 
+				new ToggleButton("Arc"), new ToggleButton("Add Token"), 
+				new ToggleButton("Remove Token"), 
+				new ToggleButton("Fire Transition"), new ToggleButton("Simulate"));
+		
+		for(Node t: toolBar.getChildren()){
+			((ToggleButton)t).setToggleGroup(selectMode);
+			((ToggleButton)t).setOnAction(e ->clearOldMode());
+		}
+		
+		selectMode.getToggles().get(0).setSelected(true);		//set default value to selected
+		
+		//enable transition firing
+		toolBar.getChildren().get(5).setOnMouseClicked( e ->{
+			sim = new Simulation(net, layout);
+		});
+		
+		toolBar.getChildren().get(6).setOnMouseClicked( e ->{
+			sim = new Simulation(net, layout);
+			sim.displayMenu(primaryStage);
+		});
+		
+		return toolBar;
+	}
+	
+	//returns application MenuBar
 	private MenuBar getMenuBar(Stage primaryStage){
 		Menu file = new Menu("File");
 		MenuBar mainMenu = new MenuBar(file);
@@ -166,16 +182,19 @@ public class PetriNetEditor extends Application{
 				fileError.show();
 			}
 			
+			//set context menu and event handler for all places
 			for(Place place : net.getPlaces()){
 				place.setContextMenu(getPlaceMenu(place, primaryStage, tokens));
 				place.setOnMouseClicked(v -> {handlePlaceClick(v);});
 			}
 			
+			//set context menu and event handler for all transitions
 			for(Transition transition : net.getTransitions()){
 				transition.setContextMenu(getTransitionMenu(transition, primaryStage));
 				transition.setOnMouseClicked(v -> {handleTransitionClick(v);});
 			}
 			
+			//set event handler for all arcs
 			for(Arc arc : net.getArcs()){
 				arc.setOnMouseClicked(v -> {handleArcClick(v);});
 			}
@@ -208,7 +227,7 @@ public class PetriNetEditor extends Application{
 		return mainMenu;
 	}
 	
-	//window displayed for file open error
+	//returns window displayed for file open error
 	private Stage getFileOpenError(){
 		Stage fileError = new Stage();
 		fileError.setTitle("File Open Error");
@@ -236,6 +255,8 @@ public class PetriNetEditor extends Application{
 		MenuItem edit = new MenuItem("Edit");
 		
 		edit.setOnAction(v->{
+			//display place edit menu
+			
 			Stage editMenu = new Stage();
 			editMenu.initOwner(primaryStage);
 			editMenu.setTitle("Edit Place");
@@ -257,11 +278,11 @@ public class PetriNetEditor extends Application{
 			
 			ok.setOnAction(n ->{
 				
+				//set place name to first 20 non-space characters in first TextField
 				String name = ((TextField)((HBox)pane.getChildren().get(0)).getChildren().get(1)).getText();
 				name = name.replaceAll("\\s","");
 				if(name.length()>20)
 					name = name.substring(0,20);
-				
 				newPlace.setName(name);
 				
 				int numTokens = newPlace.getNumTokens();
@@ -269,21 +290,18 @@ public class PetriNetEditor extends Application{
 				try{
 						numTokens = Integer.parseInt(((TextField)((HBox)pane.getChildren().get(1)).getChildren().get(1)).getText());
 						
-						if(numTokens<0){
-							numTokens = 0;
-						}
-						
-						if(numTokens>99){
-							numTokens = 99;
-						}
-						
-						tokens.setTokens(newPlace, numTokens, true);
+						//if number of tokens is within bounds, set new number of tokens
+						if(numTokens<0&&numTokens>99)
+							tokens.setTokens(newPlace, numTokens, true);
 						
 						if(sim!=null)
+							//disable transition firing
 							sim = new Simulation(net, layout);
 						editMenu.close();
 				}
 				catch(NumberFormatException x){
+					//display error for invalid 
+					
 					Stage tokenError = new Stage();
 					tokenError.initOwner(editMenu);
 					tokenError.setTitle("Invalid Token Number");
@@ -315,6 +333,7 @@ public class PetriNetEditor extends Application{
 			editMenu.show();
 			
 			if(sim!=null)
+				//refresh sim references
 				sim = new Simulation(net, layout);
 		});
 		
@@ -324,6 +343,7 @@ public class PetriNetEditor extends Application{
 				net.removePlace(newPlace);
 				tokens.updateTransitions();
 				if(sim!=null)
+					//refresh sim references
 					sim = new Simulation(net, layout);
 		});
 		
@@ -338,6 +358,8 @@ public class PetriNetEditor extends Application{
 		MenuItem edit = new MenuItem("Edit");
 		
 		edit.setOnAction(v->{
+			//display arc edit menu
+			
 			Stage editMenu = new Stage();
 			editMenu.setTitle("Edit Arc");
 			BorderPane pane = new BorderPane();
@@ -369,10 +391,13 @@ public class PetriNetEditor extends Application{
 						}
 						
 						if(sim!=null)
+							//refresh sim references
 							sim = new Simulation(net, layout);
 						editMenu.close();
 				}
 				catch(NumberFormatException x){
+					//display error for invalid weight input
+					
 					Stage weightError = new Stage();
 					weightError.initOwner(editMenu);
 					weightError.setTitle("Invalid Weight Number");
@@ -404,15 +429,13 @@ public class PetriNetEditor extends Application{
 			
 			editMenu.setScene(new Scene(pane));
 			editMenu.show();
-			
-			if(sim!=null)
-				sim = new Simulation(net, layout);
 		});
 		
 		MenuItem delete = new MenuItem("Delete");
 		delete.setOnAction(v ->{
 				net.removeArc(newArc);
 				if(sim!=null)
+					//refresh sim references
 					sim = new Simulation(net, layout);
 		});
 		
@@ -427,6 +450,8 @@ public class PetriNetEditor extends Application{
 		MenuItem edit = new MenuItem("Edit");
 		
 		edit.setOnAction(v->{
+			//display transition edit menu
+			
 			Stage editMenu = new Stage();
 			editMenu.initOwner(primaryStage);
 			editMenu.setTitle("Edit Transition");
@@ -448,11 +473,11 @@ public class PetriNetEditor extends Application{
 			
 			ok.setOnAction(n ->{
 				
+				//set name to first 20 non-space characters in first TextField
 				String name = ((TextField)((HBox)pane.getChildren().get(0)).getChildren().get(1)).getText();
 				name = name.replaceAll("\\s","");
 				if(name.length()>20)
 					name = name.substring(0,20);
-				
 				newTransition.setName(name);
 				
 				int priority = newTransition.getPriority();
@@ -468,11 +493,16 @@ public class PetriNetEditor extends Application{
 							priority = 10000;
 						}
 						
+				newTransition.setPriority(priority);
+						
 						if(sim!=null)
+							//refresh sim references
 							sim = new Simulation(net, layout);
 						editMenu.close();
 				}
 				catch(NumberFormatException x){
+					//display error for invalid priority input
+					
 					Stage priorityError = new Stage();
 					priorityError.initOwner(editMenu);
 					priorityError.setTitle("Invalid Priority Number");
@@ -502,9 +532,6 @@ public class PetriNetEditor extends Application{
 			
 			editMenu.setScene(new Scene(pane));
 			editMenu.show();
-			
-			if(sim!=null)
-				sim = new Simulation(net, layout);
 		});
 		
 		MenuItem delete = new MenuItem("Delete");
@@ -512,6 +539,7 @@ public class PetriNetEditor extends Application{
 				clearOldMode();
 				net.removeTransition(newTransition);
 				if(sim!=null)
+					//refresh sim references
 					sim = new Simulation(net, layout);
 		});
 		
@@ -525,15 +553,18 @@ public class PetriNetEditor extends Application{
 		ObservableList<Double> points = potentialArc.getPoints();
 		int length = potentialArc.getPoints().size();
 		
+		//last segment of arc
 		Line last = new Line(points.get(length-4), //startX
 				points.get(length-3),			   //startY
 				points.get(length-2),  			   //endX
 				points.get(length-1));  		   //endY
 		
-		
+		//portion of last segment which intersects with arc end node (initialized for place end node)
 		Shape intersectionShape = Shape.intersect(new Circle(node.getX()+10.0, node.getY()+10.0, 20.0), last);
 		
+		
 		if(node.getTypeSelector()=="Transition"){
+			//change intersection for transition end node
 			intersectionShape = Shape.intersect(new Rectangle(node.getX(), node.getY(), 10.0, 40.0), last);
 		}
 		
@@ -542,8 +573,8 @@ public class PetriNetEditor extends Application{
 		double changeX = last.getEndX() - last.getStartX();
 		double changeY = last.getEndY() - last.getStartY();
 		
+		//get angle 
 		Point2D changeVector = new Point2D(changeX, changeY);
-		
 		double angle = changeVector.angle(new Point2D(-Math.abs(changeVector.normalize().getX()), 0));
 		angle *= Math.PI/180;
 		
@@ -595,7 +626,7 @@ public class PetriNetEditor extends Application{
 		potentialArc = null;
 	}
 	
-	//begin or end segment
+	//add beginning or ending segment of arc
 	void procPotentialArc(PNode node){
 		if(currentSegment==null){
 			currentSegment = new Segment(node);
@@ -615,18 +646,18 @@ public class PetriNetEditor extends Application{
 		}	
 	}
 	
-	//TODO:  Make less expensive
+	//add intermediary segment of arc
 	void addSegment(double x, double y){
 		if(currentSegment!=null){
 			layout.getChildren().remove(currentSegment);
 			
-			//update and add segments to potentialArc
-			if(layout.getChildren().indexOf(potentialArc)!=-1)
-				layout.getChildren().remove(potentialArc);
+			//add segment to potentialArc
+			layout.getChildren().remove(potentialArc);
 			potentialArc.getPoints().addAll(x, y);
+			
 			layout.getChildren().add(potentialArc);
 			
-			//set new potential segment
+			//add new potential Segment
 			currentSegment = new Segment(currentSegment.getStartNode(), x, y);
 			layout.getChildren().add(currentSegment);
 		}
@@ -634,16 +665,18 @@ public class PetriNetEditor extends Application{
 	
 	//called when selectedToggle is changed
 	private void clearOldMode(){
+		
+		//remove any incomplete arc
 		if(currentSegment!=null){
 			layout.getChildren().remove(currentSegment);
 			currentSegment = null;
 		}
-		
 		if(potentialArc!=null){
 			layout.getChildren().remove(potentialArc);
 			potentialArc = null;
 		}
 		
+		//disable transition firing
 		if(sim!=null){
 			sim = null;
 		}
