@@ -588,7 +588,8 @@ public class PetriNetEditor extends Application{
 			angle = Math.abs(Math.PI - angle);
 			sign = -1;
 		}
-				
+		
+		//set x coordinate to nearest point in intersection bounds
 		double xCoord = 0.0;
 			
 		if(changeX>=0.0)
@@ -596,7 +597,8 @@ public class PetriNetEditor extends Application{
 		else if(changeX<0.0){
 			xCoord = intersectionBounds.getMaxX();
 		}
-			
+		
+		//set y coordinate to nearest point in intersection bounds
 		double yCoord = 0.0;
 			
 		if(changeY >=0.0){
